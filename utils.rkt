@@ -10,6 +10,8 @@
 
 (define-logger trycompile)
 
+(define current-erase-bad-zos? (make-parameter #f))
+
 ;=============================;
 ;=== Compilation utilities ===;
 ;=============================;
@@ -64,13 +66,15 @@
     (for ([f (in-list files)])
       (with-handlers* ([exn:fail?
                         (λ (e) (errortrace-error-display-handler (exn-message e) e))])
-        (log-trycompile-info "Compiling ~a" (path->string f))
-        (log-trycompile-info "Compiled for ~a (current is ~a ~a)" (zo-version f) version-bytes vm-bytes)
+        (log-trycompile-info "File: ~a" (path->string f))
+        (log-trycompile-info "  Compiled for ~a (current is ~a ~a)" (zo-version f) version-bytes vm-bytes)
         (define c? (compiled-for-current-version? f))
         (define zo (zo-file f))
-        #;(when (and (not c?) zo (file-exists? zo)) (delete-file zo)) ; Bad fix for compilation that should happen but doesn't
+        (when (and (not c?) zo (file-exists? zo) (current-erase-bad-zos?))
+          (delete-file zo)) ; Bad fix for compilation that should happen but doesn't
+        (log-trycompile-info "  Compiling." )
         (cmc f)
-        (log-trycompile-info "Compiled for ~a (after compiling)" (zo-version f)))))
+        (log-trycompile-info "  Compiled for ~a (after compiling)" (zo-version f)))))
   (define err-str (get-output-string err-str-port))
   (log-trycompile-info err-str))
 
@@ -97,7 +101,13 @@
   (try-compile-files (list try-file1 try-file2)))
 
 ;;; Run with
-;;; export PLTSTDERR=debug@trycompile && racket -l qs-compile-issue/utils &
+;;; export PLTSTDERR=debug@trycompile && racket -l qs-compile-issue/utils -- --erase
+;;; Then
+;;; export PLTSTDERR=debug@trycompile && racket -l qs-compile-issue/utils
 
 (module+ main
+  (define args (vector->list (current-command-line-arguments)))
+  (current-erase-bad-zos? (member "--erase" args))
+  (when (current-erase-bad-zos?)
+    (log-trycompile-info "Erasing bad zos before compiling"))
   (try-compile))
