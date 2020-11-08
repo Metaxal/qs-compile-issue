@@ -91,14 +91,16 @@
   ;; Copy old zo files to 'compiled' directory.
   (copy-file (build-path script-dir "compiled-old" "test-compile_rkt--7.7.0.901.zo")
              (zo-file try-file1)
-             #;(build-path script-dir "compiled" "test-compile_rkt.zo")
              #t)
   (copy-file (build-path script-dir "compiled-old" "test-compile-cs_rkt--7.8.0.6_cs.zo")
              (zo-file try-file2)
-             #;(build-path script-dir "compiled" "test-compile-cs_rkt.zo")
              #t)
   ;; Try to compile them
   (try-compile-files (list try-file1 try-file2)))
+
+;============;
+;=== Main ===;
+;============;
 
 ;;; Run with
 ;;; export PLTSTDERR=debug@trycompile && racket -l qs-compile-issue/utils -- --erase
